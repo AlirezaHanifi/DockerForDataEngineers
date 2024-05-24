@@ -1,11 +1,14 @@
 import json
-import time
-import redis
+import os
 import random
+import time
 from datetime import datetime
 
-# Dictionary of page titles and URLs
-page_data = {
+import redis
+
+REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+PAGE_DATE = {
     "Homepage": "/",
     "Product_Listings": "/pages/product_listings",
     "The Great Gatsby": "/product_details/classic_literature/the-great-gatsby/1",
@@ -50,21 +53,21 @@ page_data = {
 def generate_clickstream_data():
     while True:
         user_id = random.randint(100, 999)
-        page_title, page_url = random.choice(list(page_data.items()))
+        page_title, page_url = random.choice(list(PAGE_DATE.items()))
         event_type = random.choice(["click", "purchase", "add_to_cart"])
         click_data = {
             "user_id": user_id,
             "page_title": page_title,
             "page_url": page_url,
             "timestamp": datetime.now().isoformat(),
-            "event_type": event_type
+            "event_type": event_type,
         }
         yield json.dumps(click_data)
-        time.sleep(0.1)  # Simulating some delay between generating each clickstream event
+        time.sleep(1)
 
 
 if __name__ == "__main__":
-    r = redis.Redis(host='127.0.0.1', port=6379)
+    r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
     for data in generate_clickstream_data():
-        r.rpush('clickstream_queue', data)
+        r.rpush("clickstream_queue", data)
         print(data)
